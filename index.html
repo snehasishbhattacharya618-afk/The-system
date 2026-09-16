@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE SYSTEM</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#05070c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="System">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+  @font-face {
+    font-family: 'system-mono';
+    src: local('Consolas'), local('Menlo'), local('Monaco');
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #05070c;
+    color: #b8e8ff;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body {
+    padding: 20px 14px 60px;
+    background-image:
+      radial-gradient(ellipse at 50% -10%, rgba(60,130,255,0.15), transparent 60%),
+      linear-gradient(180deg, #05070c 0%, #070a12 100%);
+  }
+  .frame {
+    max-width: 480px;
+    margin: 0 auto;
+    border: 1px solid #1c3a5e;
+    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(10,20,35,0.9), rgba(6,12,22,0.95));
+    box-shadow: 0 0 0 1px rgba(70,160,255,0.08), 0 0 40px rgba(30,100,220,0.08) inset;
+    position: relative;
+    overflow: hidden;
+  }
+  .frame::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, rgba(90,180,255,0.02) 0px, transparent 1px, transparent 2px);
+    pointer-events: none;
+  }
+  .header {
+    text-align: center;
+    padding: 22px 16px 16px;
+    border-bottom: 1px solid #16304f;
+    position: relative;
+  }
+  .header .tag {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: #4a90d9;
+    opacity: 0.75;
+  }
+  .header h1 {
+    font-size: 26px;
+    letter-spacing: 6px;
+    color: #cfeeff;
+    margin-top: 6px;
+    text-shadow: 0 0 12px rgba(110,190,255,0.5);
+    font-weight: normal;
+  }
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #2a5580, transparent);
+    margin: 0 16px;
+  }
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 18px;
+    font-size: 12px;
+    color: #7fb8e8;
+  }
+  .status-row .val { color: #eaf7ff; font-weight: bold; }
+  .rank-badge {
+    text-align: center;
+    padding: 4px 0 14px;
+  }
+  .rank-badge span {
+    display: inline-block;
+    padding: 3px 14px;
+    border: 1px solid #3a6ea5;
+    border-radius: 2px;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: #ffd875;
+    background: rgba(255,216,117,0.05);
+  }
+  .xp-wrap {
+    padding: 0 18px 16px;
+  }
+  .xp-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #6fa8d6;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+  .xp-bar-outer {
+    height: 10px;
+    background: #0a1420;
+    border: 1px solid #1e4266;
+    position: relative;
+    overflow: hidden;
+  }
+  .xp-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, #1f6fb8, #4ab6ff);
+    box-shadow: 0 0 8px rgba(74,182,255,0.6);
+    transition: width 0.5s ease;
+  }
+  .section-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #ffd875;
+    padding: 16px 18px 8px;
+    text-shadow: 0 0 6px rgba(255,216,117,0.3);
+  }
+  .quest-list {
+    padding: 0 14px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .quest {
+    border: 1px solid #1e3a5c;
+    background: rgba(15,30,50,0.4);
+    padding: 12px 12px;
+    border-radius: 3px;
+    position: relative;
+  }
+  .quest.done {
+    border-color: #2a5c3a;
+    background: rgba(20,50,30,0.3);
+  }
+  .quest-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .quest-name {
+    font-size: 13px;
+    color: #e2f3ff;
+    line-height: 1.4;
+  }
+  .quest.done .quest-name {
+    color: #8fd6a3;
+    text-decoration: line-through;
+    text-decoration-color: #3a7a50;
+  }
+  .quest-sub {
+    font-size: 10.5px;
+    color: #5f8fb8;
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+  }
+  .quest-reward {
+    font-size: 10.5px;
+    color: #ffd875;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .quest-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  button {
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 7px 10px;
+    background: rgba(30,70,110,0.5);
+    border: 1px solid #2f6394;
+    color: #cfeeff;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  button:active { transform: scale(0.97); }
+  button.primary {
+    background: rgba(40,100,60,0.4);
+    border-color: #3a8a55;
+    color: #c9ffd9;
+  }
+  button.danger {
+    background: rgba(100,30,30,0.3);
+    border-color: #944040;
+    color: #ffc9c9;
+  }
+  button.ghost {
+    background: transparent;
+    border-color: #244a6e;
+    color: #7fb8e8;
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .quest-done-tag {
+    font-size: 10px;
+    color: #6bd68a;
+    letter-spacing: 2px;
+  }
+  .warning-box {
+    margin: 14px 14px 0;
+    border: 1px solid #7a3030;
+    background: rgba(90,20,20,0.2);
+    padding: 12px;
+    border-radius: 3px;
+  }
+  .warning-box.pulse {
+    animation: warnpulse 1.6s ease-in-out infinite;
+  }
+  @keyframes warnpulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(255,60,60,0); border-color: #7a3030; }
+    50% { box-shadow: 0 0 14px rgba(255,60,60,0.45); border-color: #c14545; }
+  }
+  .warning-box .wtitle {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #ff8a8a;
+    margin-bottom: 4px;
+  }
+  .warning-box .wbody {
+    font-size: 11.5px;
+    color: #ffb8b8;
+    line-height: 1.5;
+  }
+  .countdown-strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 18px;
+    font-size: 11px;
+    color: #7fb8e8;
+    border-bottom: 1px solid #16304f;
+  }
+  .countdown-strip .clock {
+    color: #eaf7ff;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .countdown-strip.urgent .clock {
+    color: #ff9a9a;
+    animation: clockflash 1s step-start infinite;
+  }
+  @keyframes clockflash {
+    50% { opacity: 0.35; }
+  }
+  .notif-status {
+    font-size: 10px;
+    color: #4a7aa8;
+    padding: 0 18px 10px;
+    letter-spacing: 0.5px;
+  }
+  .notif-status.denied {
+    color: #ff8a8a;
+  }
+  .notif-status.granted {
+    color: #6bd68a;
+  }
+  .quest.overdue {
+    animation: questshake 4s ease-in-out infinite;
+    border-color: #7a3030;
+  }
+  @keyframes questshake {
+    0%, 92%, 100% { transform: translateX(0); }
+    93% { transform: translateX(-3px); }
+    94% { transform: translateX(3px); }
+    95% { transform: translateX(-2px); }
+    96% { transform: translateX(2px); }
+    97% { transform: translateX(0); }
+  }
+  .footer-actions {
+    display: flex;
+    gap: 8px;
+    padding: 18px 14px 4px;
+    border-top: 1px solid #16304f;
+    margin-top: 12px;
+  }
+  .streak-strip {
+    display: flex;
+    gap: 4px;
+    padding: 0 18px 14px;
+    flex-wrap: wrap;
+  }
+  .streak-day {
+    width: 26px;
+    height: 26px;
+    border: 1px solid #1e3a5c;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: #4a7aa8;
+  }
+  .streak-day.hit {
+    background: rgba(74,182,255,0.15);
+    border-color: #3a7ab8;
+    color: #9fd8ff;
+  }
+  .streak-day.miss {
+    background: rgba(120,30,30,0.15);
+    border-color: #6a2a2a;
+    color: #d88a8a;
+  }
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,10,0.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: #0a1626;
+    border: 1px solid #2f6394;
+    border-radius: 4px;
+    padding: 20px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+  }
+  .modal h2 {
+    color: #ffd875;
+    font-size: 18px;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+    font-weight: normal;
+  }
+  .modal p {
+    font-size: 12px;
+    color: #b8e8ff;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .lvlup-glow {
+    text-align: center;
+    padding: 6px;
+    font-size: 34px;
+    color: #4ab6ff;
+    text-shadow: 0 0 20px rgba(74,182,255,0.8);
+  }
+  .error-msg {
+    font-size: 10.5px;
+    color: #ff8a8a;
+    margin-top: 6px;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 30px 20px;
+    color: #4a7aa8;
+    font-size: 12px;
+  }
+  .subject-row {
+    display: flex;
+    gap: 6px;
+    padding: 0 14px 12px;
+  }
+  .subject-row select {
+    flex: 1;
+    font-family: inherit;
+    font-size: 12px;
+    background: #0a1420;
+    border: 1px solid #2a5580;
+    color: #cfeeff;
+    padding: 8px;
+    border-radius: 2px;
+  }
+  input[type=text], input[type=number] {
+    font-family: inherit;
+    font-size: 12px;
+    background: #0a1420;
+    border: 1px solid #2a5580;
+    color: #cfeeff;
+    padding: 8px;
+    border-radius: 2px;
+    width: 100%;
+  }
+  .add-quest-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 14px 14px;
+  }
+  .row2 { display: flex; gap: 6px; }
+  .row2 > * { flex: 1; }
+</style>
+</head>
+<body>
+
+<div class="frame" id="frame">
+  <div class="header">
+    <div class="tag">// ARISE //</div>
+    <h1>THE SYSTEM</h1>
+  </div>
+
+  <div class="rank-badge"><span id="rank-label">E-RANK HUNTER</span></div>
+
+  <div class="status-row">
+    <div>LEVEL <span class="val" id="level-val">1</span></div>
+    <div>STREAK <span class="val" id="streak-val">0</span> DAYS</div>
+    <div>TOTAL XP <span class="val" id="total-xp-val">0</span></div>
+  </div>
+
+  <div class="xp-wrap">
+    <div class="xp-label"><span>EXP</span><span id="xp-fraction">0 / 100</span></div>
+    <div class="xp-bar-outer"><div class="xp-bar-inner" id="xp-bar" style="width:0%"></div></div>
+  </div>
+
+  <div class="countdown-strip" id="countdown-strip">
+    <span>TIME REMAINING TODAY</span>
+    <span class="clock" id="clock-val">--:--:--</span>
+  </div>
+  <div class="notif-status" id="notif-status"></div>
+
+  <div class="divider"></div>
+
+  <div id="warning-slot"></div>
+
+  <div class="section-title">DAILY QUEST — MIXED SUBJECTS</div>
+  <div class="quest-list" id="quest-list"></div>
+
+  <div class="add-quest-row">
+    <input type="text" id="new-quest-name" placeholder="add a quest, e.g. 10 kinematics numericals" />
+    <div class="row2">
+      <select id="new-quest-subject">
+        <option value="physics">physics</option>
+        <option value="chemistry">chemistry</option>
+        <option value="math">math</option>
+      </select>
+      <input type="number" id="new-quest-xp" placeholder="XP" value="20" min="5" max="200" />
+    </div>
+    <button class="ghost" onclick="addQuest()" style="width:100%">+ ADD QUEST</button>
+  </div>
+
+  <div class="section-title">7-DAY LOG</div>
+  <div class="streak-strip" id="streak-strip"></div>
+
+  <div class="footer-actions">
+    <button class="danger" style="flex:1" onclick="confirmEndDay()">END DAY</button>
+  </div>
+  <div class="no-undo-note">this system does not offer a reset. progress and failures are both permanent.</div>
+</div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'system-state-v1';
+
+const DEFAULT_QUESTS = () => ([
+  { id: 'q1', name: '10 numerical problems', subject: 'physics', xp: 30, done: false },
+  { id: 'q2', name: '10 numerical problems', subject: 'chemistry', xp: 30, done: false },
+  { id: 'q3', name: '10 numerical problems', subject: 'math', xp: 30, done: false },
+]);
+
+let state = {
+  level: 1,
+  xp: 0,
+  totalXp: 0,
+  streak: 0,
+  lastCompletedDate: null,
+  log: {},
+  quests: DEFAULT_QUESTS(),
+  currentDate: null,
+  penaltyActive: false
+};
+
+function xpToNextLevel(level) {
+  return 100 + (level - 1) * 40;
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function dayLabel(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toLocaleDateString('en-US', { weekday: 'short' })[0];
+}
+
+function dateStrOffset(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+async function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const loaded = JSON.parse(raw);
+      state = Object.assign(state, loaded);
+    }
+  } catch (e) {
+    console.log('no existing state, starting fresh');
+  }
+
+  const today = todayStr();
+  if (state.currentDate !== today) {
+    handleDayTransition(today);
+  }
+  render();
+  registerServiceWorker();
+  setupNotifications();
+}
+
+function handleDayTransition(today) {
+  if (state.currentDate) {
+    const allDone = state.quests.length > 0 && state.quests.every(q => q.done);
+    const anyDone = state.quests.some(q => q.done);
+    if (allDone) {
+      state.log[state.currentDate] = 'hit';
+      const y = new Date(state.currentDate);
+      y.setDate(y.getDate() + 1);
+      const expectedToday = y.getFullYear() + '-' + String(y.getMonth()+1).padStart(2,'0') + '-' + String(y.getDate()).padStart(2,'0');
+      if (expectedToday === today) {
+        state.streak += 1;
+      } else {
+        state.streak = 1;
+      }
+    } else {
+      state.log[state.currentDate] = anyDone ? 'partial' : 'miss';
+      state.streak = 0;
+      if (!anyDone) {
+        state.penaltyActive = true;
+      }
+    }
+  }
+  state.currentDate = today;
+  state.quests = DEFAULT_QUESTS();
+  saveState();
+}
+
+async function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.error('save failed', e);
+  }
+}
+
+function addXp(amount) {
+  state.xp += amount;
+  state.totalXp += amount;
+  let leveledUp = false;
+  while (state.xp >= xpToNextLevel(state.level)) {
+    state.xp -= xpToNextLevel(state.level);
+    state.level += 1;
+    leveledUp = true;
+  }
+  if (leveledUp) {
+    showLevelUp();
+  }
+}
+
+function rankForLevel(level) {
+  if (level >= 30) return 'S-RANK HUNTER';
+  if (level >= 20) return 'A-RANK HUNTER';
+  if (level >= 12) return 'B-RANK HUNTER';
+  if (level >= 6) return 'C-RANK HUNTER';
+  if (level >= 3) return 'D-RANK HUNTER';
+  return 'E-RANK HUNTER';
+}
+
+function showLevelUp() {
+  const modalBg = document.getElementById('modal-bg');
+  const content = document.getElementById('modal-content');
+  content.innerHTML =
+    '<div class="lvlup-glow"><i class="ti ti-bolt"></i></div>' +
+    '<h2>LEVEL UP</h2>' +
+    '<p>you have reached level ' + state.level + '.<br>the system acknowledges your growth.</p>' +
+    '<button class="primary" style="width:100%" onclick="closeModal()">CONTINUE</button>';
+  modalBg.classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('show');
+  saveState();
+  render();
+}
+
+function completeQuest(id) {
+  const q = state.quests.find(x => x.id === id);
+  if (!q || q.done) return;
+  q.done = true;
+  state.penaltyActive = false;
+  addXp(q.xp);
+  saveState();
+  render();
+}
+
+function undoQuest(id) {
+  const q = state.quests.find(x => x.id === id);
+  if (!q || !q.done) return;
+  q.done = false;
+  state.xp -= q.xp;
+  state.totalXp -= q.xp;
+  if (state.xp < 0) {
+    if (state.level > 1) {
+      state.level -= 1;
+      state.xp += xpToNextLevel(state.level);
+    } else {
+      state.xp = 0;
+    }
+  }
+  saveState();
+  render();
+}
+
+function addQuest() {
+  const nameInput = document.getElementById('new-quest-name');
+  const subjectInput = document.getElementById('new-quest-subject');
+  const xpInput = document.getElementById('new-quest-xp');
+  const name = nameInput.value.trim();
+  let xp = parseInt(xpInput.value, 10);
+
+  const existingError = document.getElementById('add-quest-error');
+  if (existingError) existingError.remove();
+
+  if (!name) {
+    const err = document.createElement('div');
+    err.className = 'error-msg';
+    err.id = 'add-quest-error';
+    err.textContent = 'enter a quest name first';
+    nameInput.insertAdjacentElement('afterend', err);
+    return;
+  }
+  if (isNaN(xp) || xp < 5) xp = 20;
+  if (xp > 200) xp = 200;
+
+  state.quests.push({
+    id: 'q' + Date.now(),
+    name: name,
+    subject: subjectInput.value,
+    xp: xp,
+    done: false
+  });
+  nameInput.value = '';
+  xpInput.value = '20';
+  saveState();
+  render();
+}
+
+function removeQuest(id) {
+  state.quests = state.quests.filter(q => q.id !== id);
+  saveState();
+  render();
+}
+
+function confirmEndDay() {
+  const allDone = state.quests.length > 0 && state.quests.every(q => q.done);
+  const modalBg = document.getElementById('modal-bg');
+  const content = document.getElementById('modal-content');
+  if (allDone) {
+    content.innerHTML =
+      '<h2>DAY CLEARED</h2>' +
+      '<p>all quests complete. the system will log today as a clean clear and prepare tomorrow\'s quest.</p>' +
+      '<button class="primary" style="width:100%" onclick="doEndDay()">CONFIRM</button>';
+  } else {
+    const done = state.quests.filter(q => q.done).length;
+    content.innerHTML =
+      '<h2>WARNING</h2>' +
+      '<p>' + done + ' of ' + state.quests.length + ' quests incomplete. ending the day now breaks your streak and logs a failure. the system does not negotiate.</p>' +
+      '<div class="row2"><button class="ghost" style="width:100%" onclick="closeModal()">GO BACK</button>' +
+      '<button class="danger" style="width:100%" onclick="doEndDay()">END ANYWAY</button></div>';
+  }
+  modalBg.classList.add('show');
+}
+
+function doEndDay() {
+  const d = new Date(state.currentDate);
+  d.setDate(d.getDate() + 1);
+  const nextDay = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  handleDayTransition(nextDay);
+  closeModal();
+}
+
+function subjectIcon(subject) {
+  if (subject === 'physics') return 'ti-atom-2';
+  if (subject === 'chemistry') return 'ti-flask';
+  return 'ti-math-function';
+}
+
+function render() {
+  document.getElementById('level-val').textContent = state.level;
+  document.getElementById('streak-val').textContent = state.streak;
+  document.getElementById('total-xp-val').textContent = state.totalXp;
+  document.getElementById('rank-label').textContent = rankForLevel(state.level);
+
+  const need = xpToNextLevel(state.level);
+  const pct = Math.min(100, Math.round((state.xp / need) * 100));
+  document.getElementById('xp-bar').style.width = pct + '%';
+  document.getElementById('xp-fraction').textContent = state.xp + ' / ' + need;
+
+  renderWarnings();
+
+  const list = document.getElementById('quest-list');
+  if (state.quests.length === 0) {
+    list.innerHTML = '<div class="empty-state">no active quests. add one below.</div>';
+  } else {
+    list.innerHTML = state.quests.map(q => {
+      const icon = subjectIcon(q.subject);
+      return '<div class="quest ' + (q.done ? 'done' : '') + '" data-quest-id="' + q.id + '">' +
+        '<div class="quest-top">' +
+          '<div>' +
+            '<div class="quest-name"><i class="ti ' + icon + '" style="font-size:14px;margin-right:6px;vertical-align:-2px" aria-hidden="true"></i>' + escapeHtml(q.name) + '</div>' +
+            '<div class="quest-sub">' + q.subject.toUpperCase() + '</div>' +
+          '</div>' +
+          '<div class="quest-reward">+' + q.xp + ' XP</div>' +
+        '</div>' +
+        '<div class="quest-actions">' +
+          (q.done
+            ? '<span class="quest-done-tag"><i class="ti ti-check" aria-hidden="true"></i> CLEARED</span><button class="ghost" onclick="undoQuest(\'' + q.id + '\')">UNDO</button>'
+            : '<button class="primary" onclick="completeQuest(\'' + q.id + '\')" style="flex:1">MARK COMPLETE</button><button class="ghost" onclick="removeQuest(\'' + q.id + '\')">✕</button>'
+          ) +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  const strip = document.getElementById('streak-strip');
+  let html = '';
+  for (let i = -6; i <= 0; i++) {
+    const ds = dateStrOffset(i);
+    const status = state.log[ds];
+    let cls = '';
+    if (status === 'hit') cls = 'hit';
+    else if (status === 'miss') cls = 'miss';
+    html += '<div class="streak-day ' + cls + '">' + dayLabel(i) + '</div>';
+  }
+  strip.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function msUntilMidnight() {
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+  return midnight - now;
+}
+
+function formatCountdown(ms) {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function renderCountdown() {
+  const remaining = msUntilMidnight();
+  const clockEl = document.getElementById('clock-val');
+  const stripEl = document.getElementById('countdown-strip');
+  clockEl.textContent = formatCountdown(remaining);
+
+  const hoursLeft = remaining / 3600000;
+  const pending = state.quests.filter(q => !q.done).length;
+  if (pending > 0 && hoursLeft <= 4) {
+    stripEl.classList.add('urgent');
+  } else {
+    stripEl.classList.remove('urgent');
+  }
+}
+
+function renderWarnings() {
+  const warningSlot = document.getElementById('warning-slot');
+  const pending = state.quests.filter(q => !q.done).length;
+  const total = state.quests.length;
+  const hoursLeft = msUntilMidnight() / 3600000;
+
+  let html = '';
+
+  if (state.penaltyActive) {
+    html += '<div class="warning-box pulse"><div class="wtitle">PENALTY QUEST ACTIVE</div>' +
+      '<div class="wbody">you failed to complete any quest yesterday. the system has reset your streak. complete today\'s quests to lift the penalty status.</div></div>';
+  }
+
+  if (total > 0 && pending > 0) {
+    if (hoursLeft <= 1) {
+      html += '<div class="warning-box pulse"><div class="wtitle">FINAL WARNING</div>' +
+        '<div class="wbody">under 1 hour remains and ' + pending + ' of ' + total + ' quests are incomplete. the day will close as a failure unless you act now.</div></div>';
+    } else if (hoursLeft <= 4) {
+      html += '<div class="warning-box pulse"><div class="wtitle">TIME IS RUNNING OUT</div>' +
+        '<div class="wbody">' + pending + ' of ' + total + ' quests still incomplete, ' + Math.ceil(hoursLeft) + ' hours left today. the system recommends immediate action.</div></div>';
+    } else if (hoursLeft <= 12) {
+      html += '<div class="warning-box"><div class="wtitle">QUESTS PENDING</div>' +
+        '<div class="wbody">' + pending + ' of ' + total + ' quests remain today. do not fall behind.</div></div>';
+    }
+  }
+
+  warningSlot.innerHTML = html;
+
+  state.quests.forEach(q => {
+    const card = document.querySelector('[data-quest-id="' + q.id + '"]');
+    if (card && !q.done && hoursLeft <= 4) {
+      card.classList.add('overdue');
+    }
+  });
+}
+
+let lastNotifyTier = null;
+let notifyIntervalId = null;
+
+let swRegistration = null;
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    swRegistration = await navigator.serviceWorker.register('./sw.js');
+  } catch (e) {
+    console.log('service worker registration failed', e);
+  }
+}
+
+function setupNotifications() {
+  const statusEl = document.getElementById('notif-status');
+  if (!('Notification' in window)) {
+    if (statusEl) statusEl.textContent = 'notifications not supported in this browser';
+    return;
+  }
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(updateNotifStatus);
+  }
+  updateNotifStatus();
+  if (notifyIntervalId) clearInterval(notifyIntervalId);
+  notifyIntervalId = setInterval(checkAndNotify, 60000);
+  checkAndNotify();
+}
+
+function updateNotifStatus() {
+  const statusEl = document.getElementById('notif-status');
+  if (!statusEl) return;
+  statusEl.classList.remove('granted', 'denied');
+  if (Notification.permission === 'granted') {
+    statusEl.textContent = 'notifications active — installed app runs checks in the background while your browser is open';
+    statusEl.classList.add('granted');
+  } else if (Notification.permission === 'denied') {
+    statusEl.textContent = 'notifications blocked — enable them in your browser site settings';
+    statusEl.classList.add('denied');
+  } else {
+    statusEl.textContent = 'notifications pending — allow the permission prompt';
+  }
+}
+
+function fireNotification(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    if (swRegistration) {
+      swRegistration.showNotification(title, {
+        body: body,
+        tag: 'system-quest-alert',
+        requireInteraction: true,
+        icon: './icon-192.png',
+        badge: './icon-192.png'
+      });
+    } else {
+      const n = new Notification(title, {
+        body: body,
+        tag: 'system-quest-alert',
+        requireInteraction: true
+      });
+      n.onclick = () => { window.focus(); n.close(); };
+    }
+  } catch (e) {
+    console.log('notification failed', e);
+  }
+}
+
+function checkAndNotify() {
+  const pending = state.quests.filter(q => !q.done).length;
+  const total = state.quests.length;
+  const hoursLeft = msUntilMidnight() / 3600000;
+
+  if (total === 0 || pending === 0) {
+    lastNotifyTier = null;
+    return;
+  }
+
+  let tier = null;
+  let title = '';
+  let body = '';
+
+  if (hoursLeft <= 1) {
+    tier = 'final';
+    title = 'THE SYSTEM: final warning';
+    body = pending + ' of ' + total + ' quests incomplete. under 1 hour left. the day closes as a failure.';
+  } else if (hoursLeft <= 4) {
+    tier = 'urgent';
+    title = 'THE SYSTEM: time is running out';
+    body = pending + ' of ' + total + ' quests still incomplete, ' + Math.ceil(hoursLeft) + ' hours left.';
+  } else if (hoursLeft <= 12) {
+    tier = 'pending';
+    title = 'THE SYSTEM: quests pending';
+    body = pending + ' of ' + total + ' quests remain today.';
+  }
+
+  if (tier && tier !== lastNotifyTier) {
+    fireNotification(title, body);
+    lastNotifyTier = tier;
+  } else if (tier === 'final' && tier === lastNotifyTier) {
+    fireNotification(title, body);
+  }
+}
+
+renderCountdown();
+setInterval(() => {
+  renderCountdown();
+  renderWarnings();
+}, 1000);
+
+loadState();
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+</body>
+</html>
